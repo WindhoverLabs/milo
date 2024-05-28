@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Security;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,10 +23,14 @@ import java.util.concurrent.TimeUnit;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.milo.examples.server.ExampleServer;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfig;
+import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder;
+import org.eclipse.milo.opcua.stack.client.DiscoveryClient;
 import org.eclipse.milo.opcua.stack.client.security.DefaultClientCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,25 +88,32 @@ public class ClientExampleRunner {
 
         DefaultClientCertificateValidator certificateValidator =
             new DefaultClientCertificateValidator(trustListManager);
-
-        return OpcUaClient.create(
-            clientExample.getEndpointUrl(),
-            endpoints ->
-                endpoints.stream()
-                    .filter(clientExample.endpointFilter())
-                    .findFirst(),
-            configBuilder ->
-                configBuilder
-                    .setApplicationName(LocalizedText.english("eclipse milo opc-ua client"))
-                    .setApplicationUri("urn:eclipse:milo:examples:client")
-                    .setKeyPair(loader.getClientKeyPair())
-                    .setCertificate(loader.getClientCertificate())
-                    .setCertificateChain(loader.getClientCertificateChain())
-                    .setCertificateValidator(certificateValidator)
-                    .setIdentityProvider(clientExample.getIdentityProvider())
-                    .setRequestTimeout(uint(5000))
-                    .build()
-        );
+        
+        System.out.println("clientExample.getEndpointUrl()-->" + clientExample.getEndpointUrl());
+        
+        List<EndpointDescription>  endpoint = DiscoveryClient.getEndpoints(clientExample.getEndpointUrl()).get();
+        
+        OpcUaClientConfig builder = OpcUaClientConfig.builder().setEndpoint(endpoint.get(0)).build();
+        
+        return OpcUaClient.create(builder);
+//        return OpcUaClient.create(
+//            clientExample.getEndpointUrl(),
+//            endpoints ->
+//                endpoints.stream()
+//                    .filter(clientExample.endpointFilter())
+//                    .findFirst(),
+//            configBuilder ->
+//                configBuilder
+//                    .setApplicationName(LocalizedText.english("eclipse milo opc-ua client"))
+//                    .setApplicationUri("urn:eclipse:milo:examples:client")
+//                    .setKeyPair(loader.getClientKeyPair())
+//                    .setCertificate(loader.getClientCertificate())
+//                    .setCertificateChain(loader.getClientCertificateChain())
+//                    .setCertificateValidator(certificateValidator)
+//                    .setIdentityProvider(clientExample.getIdentityProvider())
+//                    .setRequestTimeout(uint(5000))
+//                    .build()
+//        );
     }
 
     public void run() {
